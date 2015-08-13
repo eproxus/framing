@@ -4,3 +4,10 @@ go:
   - 1.4
   - tip
 
+install:
+  - go get github.com/mattn/goveralls
+
+go_build: -v -covermode=count -coverprofile=coverage.out
+
+after_script:
+  $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
