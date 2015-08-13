@@ -14,11 +14,13 @@ import (
 
 // Errors returned by framed connections.
 var (
-	// Returned when an invalid prefix length is given.
+	// ErrPrefixLength is returned when an invalid prefix length is given.
 	ErrPrefixLength = errors.New("Invalid frame prefix length")
-	// Returned from Write(b []byte) when b is larger than MaxFrameSize.
+	// ErrFrameTooLarge is returned from Write(b []byte) when b is larger than
+	// MaxFrameSize.
 	ErrFrameTooLarge = errors.New("Frame too large for buffer size")
-	// Returned from Read(b []byte) when the frame size is bigger than b.
+	// ErrBufferTooSmall is returned from Read(b []byte) when the frame size is
+	// bigger than b.
 	ErrBufferTooSmall = errors.New("Buffer too small for packet")
 )
 
