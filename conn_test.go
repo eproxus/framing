@@ -104,7 +104,7 @@ func run(t *testing.T, size byte, endianess binary.ByteOrder) {
 
 func TestInvalidFrameSiz(t *testing.T) {
 	_, err := framing.NewConn(nil, 3, nil)
-	if err != framing.ErrFrameSize {
+	if err != framing.ErrPrefixLength {
 		t.Fail()
 	}
 }
@@ -128,7 +128,7 @@ func packetTooLarge(t *testing.T, size byte, max uint) {
 	}
 	b := make([]byte, max+1)
 	_, err = conn.Write(b)
-	if err != framing.ErrPacketTooLarge {
+	if err != framing.ErrFrameTooLarge {
 		t.Fail()
 	}
 }
