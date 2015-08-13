@@ -4,3 +4,72 @@
 
 # framing
 Framing provides a prefix length framed net.Conn connection.
+
+## Example
+
+```go
+package main
+
+import (
+    "encoding/binary"
+    "fmt"
+    "log"
+    "net"
+    "strconv"
+
+    "github.com/eproxus/framing"
+)
+
+const prefixLength = 4
+
+var endianess = binary.BigEndian
+
+func main() {
+    message := "13 bytes long"
+
+    l, err := net.Listen("tcp", ":0") // Listen on localhost, random port
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer l.Close()
+
+    port := l.Addr().(*net.TCPAddr).Port
+
+    // Send message in a go routine
+    go func() {
+        conn, err := net.Dial("tcp", ":"+strconv.Itoa(port))
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        framed, err := framing.NewConn(conn, prefixLength, endianess)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer framed.Close()
+
+        if _, err := fmt.Fprintf(framed, message); err != nil {
+            log.Fatal(err)
+        }
+    }()
+
+    conn, err := l.Accept()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    framed, err := framing.NewConn(conn, prefixLength, endianess)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer framed.Close()
+
+    // Receive message
+    frame, err := framed.ReadFrame()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Recieved \"%v\"\n", string(frame[:13]))
+}
+```
