@@ -42,7 +42,7 @@ func Test4LittleEndian(t *testing.T) {
 func run(t *testing.T, size byte, endianess binary.ByteOrder) {
 	message := "13 bytes long"
 
-	l, err := net.Listen("tcp", ":0") // listen on localhost
+	l, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,8 +98,6 @@ func run(t *testing.T, size byte, endianess binary.ByteOrder) {
 	if msg := string(fixed[:13]); msg != message {
 		t.Fatalf("Unexpected message:\nGot:\t\t%s\nExpected:\t%s\n", msg, message)
 	}
-
-	return // Done
 }
 
 func TestInvalidFrameSiz(t *testing.T) {
