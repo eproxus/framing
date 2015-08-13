@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wooga/megalomaniacs-simulation/framing"
+	"github.com/eproxus/framing"
 )
 
 func Test1BigEndian(t *testing.T) {
