@@ -19,9 +19,6 @@ var (
 	// ErrFrameTooLarge is returned from Write(b []byte) when b is larger than
 	// MaxFrameSize.
 	ErrFrameTooLarge = errors.New("Frame too large for buffer size")
-	// ErrBufferTooSmall is returned from Read(b []byte) when the frame size is
-	// bigger than b.
-	ErrBufferTooSmall = errors.New("Buffer too small for packet")
 )
 
 // Conn wraps a net.Conn making it aware about frames and their size.
@@ -34,6 +31,8 @@ type Conn struct {
 	Endianess binary.ByteOrder
 	// The maximum size of a frame for the current prefix size.
 	MaxFrameSize uint
+	// The remaining bytes of the current frame
+	bytesLeft int
 }
 
 // NewConn returns a framing.Conn that acts like a net.Conn. prefixLength
@@ -71,16 +70,29 @@ func NewConn(inner net.Conn, prefixLength byte, endianess binary.ByteOrder) (con
 
 // Read implements net.Conn.Read(b []byte)
 func (f *Conn) Read(b []byte) (n int, err error) {
-	size, err := f.readSize()
-	if err != nil {
-		return 0, err
+	total := 0
+
+	for len(b) > 0 {
+		if f.bytesLeft <= 0 {
+			frame_size, err := f.readSize()
+			if err != nil {
+				return total, err
+			}
+			f.bytesLeft = frame_size
+		}
+
+		size := min(f.bytesLeft, len(b))
+
+		n, err := f.Conn.Read(b[:size])
+		if err != nil {
+			return total, err
+		}
+		total += n
+		b = b[size:]
+		f.bytesLeft -= size
 	}
 
-	if size > len(b) {
-		return 0, ErrBufferTooSmall
-	}
-
-	return io.ReadFull(f.Conn, b[:size])
+	return total, nil
 }
 
 // ReadFrame returns the next full frame in the stream.
@@ -140,4 +152,12 @@ func (f *Conn) Write(b []byte) (n int, err error) {
 	}
 
 	return f.Conn.Write(b)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
 }

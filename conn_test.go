@@ -89,7 +89,7 @@ func run(t *testing.T, size byte, endianess binary.ByteOrder) {
 
 	fixed := make([]byte, 20) // More than 13
 	n, err := framed.Read(fixed)
-	if err != nil {
+	if err != io.EOF {
 		t.Fatal(err)
 	}
 	if n != 13 {
@@ -131,15 +131,59 @@ func packetTooLarge(t *testing.T, size byte, max uint) {
 	}
 }
 
-func TestBufferTooSmall(t *testing.T) {
-	conn := &fake{ReadWriter: bytes.NewBuffer([]byte{4, 0, 0, 0, 0})}
-	framed, _ := framing.NewConn(conn, 1, nil)
+func TestMessageSmallerThanBuffer(t *testing.T) {
+	conn := &fake{ReadWriter: bytes.NewBuffer([]byte{4, 0, 1, 2, 3})}
+	framed, _ := framing.NewConn(&fake{ReadWriter: conn}, 1, nil)
 
-	b := make([]byte, 2)
-	n, err := framed.Read(b)
-	if err != framing.ErrBufferTooSmall {
-		t.Fatal("No error received, actual bytes:", n)
+	first_b := make([]byte, 6)
+	first_n, first_err := framed.Read(first_b)
+	if first_n != 4 || first_err != io.EOF {
+		t.Fatalf("first_n = %d, first_err = %#v", first_n, first_err)
 	}
+	if !bytes.Equal(first_b, []byte{0, 1, 2, 3, 0, 0}) {
+		t.Fatal(first_b)
+	}
+}
+
+func TestMessageBiggerThanBuffer(t *testing.T) {
+	conn := &fake{ReadWriter: bytes.NewBuffer([]byte{
+		6, 0, 1, 2, 3, 4, 5,
+		// [message 1      ]
+		//          ^ first read ends
+		4, 7, 8, 9, 10,
+		// [message 2 ]
+		// ^ second read ends
+		//          ^ third read ends
+	})}
+	framed, _ := framing.NewConn(&fake{ReadWriter: conn}, 1, nil)
+
+	first_b := make([]byte, 4)
+	first_n, first_err := framed.Read(first_b)
+	if first_n != 4 || first_err != nil {
+		t.Fatal(first_n, first_err)
+	}
+	if !bytes.Equal(first_b, []byte{0, 1, 2, 3}) {
+		t.Fatal(first_b)
+	}
+
+	second_b := make([]byte, 3)
+	second_n, second_err := framed.Read(second_b)
+	if second_n != 3 || second_err != nil {
+		t.Fatal(second_n, second_err)
+	}
+	if !bytes.Equal(second_b, []byte{4, 5, 7}) {
+		t.Fatal(second_b)
+	}
+
+	third_b := make([]byte, 5)
+	third_n, third_err := framed.Read(third_b)
+	if third_n != 3 || third_err != io.EOF {
+		t.Fatal(third_n, third_err)
+	}
+	if !bytes.Equal(third_b, []byte{8, 9, 10, 0, 0}) {
+		t.Fatal(third_b)
+	}
+
 }
 
 func TestInnerReadSizeError(t *testing.T) {
