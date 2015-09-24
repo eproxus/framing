@@ -89,7 +89,7 @@ func run(t *testing.T, size byte, endianess binary.ByteOrder) {
 
 	fixed := make([]byte, 20) // More than 13
 	n, err := framed.Read(fixed)
-	if err != io.EOF {
+	if err != nil {
 		t.Fatal(err)
 	}
 	if n != 13 {
@@ -137,7 +137,7 @@ func TestMessageSmallerThanBuffer(t *testing.T) {
 
 	first_b := make([]byte, 6)
 	first_n, first_err := framed.Read(first_b)
-	if first_n != 4 || first_err != io.EOF {
+	if first_n != 4 || first_err != nil {
 		t.Fatalf("first_n = %d, first_err = %#v", first_n, first_err)
 	}
 	if !bytes.Equal(first_b, []byte{0, 1, 2, 3, 0, 0}) {
@@ -168,20 +168,26 @@ func TestMessageBiggerThanBuffer(t *testing.T) {
 
 	second_b := make([]byte, 3)
 	second_n, second_err := framed.Read(second_b)
-	if second_n != 3 || second_err != nil {
+	if second_n != 2 || second_err != nil {
 		t.Fatal(second_n, second_err)
 	}
-	if !bytes.Equal(second_b, []byte{4, 5, 7}) {
+	if !bytes.Equal(second_b, []byte{4, 5, 0}) {
 		t.Fatal(second_b)
 	}
 
 	third_b := make([]byte, 5)
 	third_n, third_err := framed.Read(third_b)
-	if third_n != 3 || third_err != io.EOF {
+	if third_n != 4 || third_err != nil {
 		t.Fatal(third_n, third_err)
 	}
-	if !bytes.Equal(third_b, []byte{8, 9, 10, 0, 0}) {
+	if !bytes.Equal(third_b, []byte{7, 8, 9, 10, 0}) {
 		t.Fatal(third_b)
+	}
+
+	fourth_b := make([]byte, 1)
+	fourth_n, fourth_err := framed.Read(fourth_b)
+	if fourth_n != 0 || fourth_err != io.EOF {
+		t.Fatal(fourth_n, fourth_err)
 	}
 
 }

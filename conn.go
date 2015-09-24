@@ -72,15 +72,15 @@ func NewConn(inner net.Conn, prefixLength byte, endianess binary.ByteOrder) (con
 func (f *Conn) Read(b []byte) (n int, err error) {
 	total := 0
 
-	for len(b) > 0 {
-		if f.bytesLeft <= 0 {
-			frame_size, err := f.readSize()
-			if err != nil {
-				return total, err
-			}
-			f.bytesLeft = frame_size
+	if f.bytesLeft <= 0 {
+		frame_size, err := f.readSize()
+		if err != nil {
+			return total, err
 		}
+		f.bytesLeft = frame_size
+	}
 
+	for len(b) > 0 && f.bytesLeft > 0 {
 		size := min(f.bytesLeft, len(b))
 
 		n, err := f.Conn.Read(b[:size])
