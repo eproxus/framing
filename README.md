@@ -1,10 +1,12 @@
 [![Build Status](https://travis-ci.org/eproxus/framing.svg)](https://travis-ci.org/eproxus/framing)
 [![Coverage Status](https://coveralls.io/repos/eproxus/framing/badge.svg?branch=master&service=github)](https://coveralls.io/github/eproxus/framing?branch=master)
 [![GoDoc](https://godoc.org/github.com/eproxus/framing?status.svg)](https://godoc.org/github.com/eproxus/framing)
-![Go Version](https://img.shields.io/badge/go-1.4-5272B4.svg)
+![Go Version](https://img.shields.io/badge/go-1.5-5272B4.svg)
 
 # framing
-Framing provides a prefix length framed net.Conn connection.
+Framing provides a prefix length framed net.Conn connection. This is useful if
+you have connections that send packages that are prefixed with 1, 2 or 4 bytes
+of message length before the actual data.
 
 ## Example
 
